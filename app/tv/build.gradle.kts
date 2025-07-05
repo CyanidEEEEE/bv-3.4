@@ -68,5 +68,6 @@ java {
 }
 
 dependencies {
+    implementation(androidx.core.splashscreen)
     implementation(project(":app:shared"))
 }
