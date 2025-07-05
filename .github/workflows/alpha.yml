@@ -9,7 +9,6 @@ jobs:
   build-alpha:
     name: Build Alpha Apk
     runs-on: macos-latest
-    if: github.repository == 'Leelion96/bv'
 
     steps:
       - name: Checkout
