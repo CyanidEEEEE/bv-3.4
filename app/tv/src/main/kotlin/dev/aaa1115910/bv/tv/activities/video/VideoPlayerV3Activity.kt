@@ -65,6 +65,21 @@ class VideoPlayerV3Activity : ComponentActivity() {
     private val playerViewModel: VideoPlayerV3ViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 新增：设置窗口宽度为屏幕的3/4，并靠右显示
+        val window = window
+        val params = window.attributes
+        val displayMetrics = resources.displayMetrics
+        val screenWidth = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
+        params.width = (screenWidth * 0.75).toInt()
+        params.height = screenHeight
+        params.gravity = android.view.Gravity.END or android.view.Gravity.TOP
+        window.attributes = params
+
+        var keepSplashScreen = true
+        installSplashScreen().apply {
+            setKeepOnScreenCondition { keepSplashScreen }
+        }
         super.onCreate(savedInstanceState)
         initVideoPlayer()
         //initDanmakuPlayer()
