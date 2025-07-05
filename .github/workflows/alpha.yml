@@ -16,7 +16,12 @@ jobs:
         with:
           ref: develop
           fetch-depth: 0
-          submodules: 'true'
+          # 使用 'recursive' 来确保检出所有嵌套的子模块
+          submodules: 'recursive'
+
+      # 关键修复步骤：强制更新所有子模块到其远程分支的最新版本
+      - name: Update Submodules
+        run: git submodule update --init --remote --recursive
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -41,12 +46,14 @@ jobs:
         env:
           SIGNING_PROPERTIES: ${{ secrets.SIGNING_PROPERTIES }}
         run: |
-          echo ${{ secrets.SIGNING_PROPERTIES }} > encoded_signing_properties
+          echo "${{ secrets.SIGNING_PROPERTIES }}" > encoded_signing_properties
           base64 -Dd -i encoded_signing_properties > signing.properties
 
       - name: Add jks file
+        env:
+          SIGN_KEY: ${{ secrets.SIGN_KEY }}
         run: |
-          echo ${{ secrets.SIGN_KEY }} > ./encoded_key
+          echo "${{ secrets.SIGN_KEY }}" > ./encoded_key
           base64 -Dd -i encoded_key > key.jks
 
       - name: Build apk
@@ -67,10 +74,10 @@ jobs:
       - name: Parse apk infos
         id: apk-infos
         run: |
-          echo "alpha_info_version_code=${{ fromJson(steps.apk-meta-alpha.outputs.content).elements[0].versionCode }}" >> $GITHUB_ENV
-          echo "alpha_info_version_name=${{ fromJson(steps.apk-meta-alpha.outputs.content).elements[0].versionName }}" >> $GITHUB_ENV
-          echo "alpha_debug_info_version_code=${{ fromJson(steps.apk-meta-alpha-debug.outputs.content).elements[0].versionCode }}" >> $GITHUB_ENV
-          echo "alpha_debug_info_version_name=${{ fromJson(steps.apk-meta-alpha-debug.outputs.content).elements[0].versionName }}" >> $GITHUB_ENV
+          echo "alpha_info_version_code=$(jq -r '.elements[0].versionCode' ${{ steps.apk-meta-alpha.outputs.path }})" >> $GITHUB_ENV
+          echo "alpha_info_version_name=$(jq -r '.elements[0].versionName' ${{ steps.apk-meta-alpha.outputs.path }})" >> $GITHUB_ENV
+          echo "alpha_debug_info_version_code=$(jq -r '.elements[0].versionCode' ${{ steps.apk-meta-alpha-debug.outputs.path }})" >> $GITHUB_ENV
+          echo "alpha_debug_info_version_name=$(jq -r '.elements[0].versionName' ${{ steps.apk-meta-alpha-debug.outputs.path }})" >> $GITHUB_ENV
 
       - name: Determine tag name
         id: tag_name
