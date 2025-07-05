@@ -16,12 +16,28 @@ jobs:
         with:
           ref: develop
           fetch-depth: 0
-          # 使用 'recursive' 来确保检出所有嵌套的子模块
-          submodules: 'recursive'
+          submodules: 'recursive' # 确保初始检出是递归的
 
-      # 关键修复步骤：强制更新所有子模块到其远程分支的最新版本
-      - name: Update Submodules
-        run: git submodule update --init --remote --recursive
+      # 增加调试步骤 1: 查看初始子模块状态
+      - name: Debug Submodule Status (Before Update)
+        run: |
+          echo "--- Initial Submodule Status ---"
+          git submodule status --recursive
+
+      # 关键修复步骤：遍历所有子模块，切换到 develop 分支并拉取最新代码
+      - name: Force Update Submodules to Develop Branch
+        run: |
+          echo "--- Updating all submodules to 'develop' branch ---"
+          # 这条命令会进入每个子模块目录，执行 'git checkout develop' 和 'git pull'
+          git submodule foreach 'git checkout develop && git pull'
+
+      # 增加调试步骤 2: 查看更新后的子模块状态和文件
+      - name: Debug Submodule Status (After Update)
+        run: |
+          echo "--- Final Submodule Status ---"
+          git submodule status --recursive
+          echo "--- Listing files in app/shared ---"
+          ls -R app/shared | head -n 30 # 列出 app/shared 目录下的部分文件以供检查
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -37,7 +53,7 @@ jobs:
       - name: Write google-services.json
         env:
           DATA: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        run: echo $DATA > app/google-services.json
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > app/google-services.json
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -57,8 +73,9 @@ jobs:
           base64 -Dd -i encoded_key > key.jks
 
       - name: Build apk
-        run: ./gradlew assembleDefaultAlpha assembleDefaultDebug
+        run: ./gradlew assembleDefaultAlpha assembleDefaultDebug --stacktrace # 增加 --stacktrace 以获取更详细的错误日志
 
+      # ... 后续的打包和发布步骤保持不变 ...
       - name: Read alpha apk output metadata
         id: apk-meta-alpha
         uses: juliangruber/read-file-action@v1
@@ -91,16 +108,12 @@ jobs:
             echo "$(git log --pretty=format:"- %s (%h)" ${{ github.event.before }}..${{ github.sha }})"
             echo "EOF"
           } >> "$GITHUB_ENV"
-
-      # upload artifacts alpha debug
-
+          
       - name: Archive alpha debug build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Alpha debug build artifact
           path: app/build/outputs/apk/default/debug/BV_${{ env.alpha_debug_info_version_code }}_${{ env.alpha_debug_info_version_name }}_default_universal.apk
-
-      # upload artifacts alpha
 
       - name: Archive default alpha build mappings
         uses: actions/upload-artifact@v4
@@ -114,12 +127,8 @@ jobs:
           name: Alpha build artifact
           path: app/build/outputs/apk/default/alpha/BV_${{ env.alpha_info_version_code }}_${{ env.alpha_info_version_name }}_default_universal.apk
 
-      # zip mapping because softprops/action-gh-release can't upload folder
-
       - name: Zip mapping
         run: zip -rj mapping.zip app/build/outputs/mapping/defaultAlpha
-
-      # upload to github release
 
       - name: Publish Pre-Release
         uses: softprops/action-gh-release@v2
