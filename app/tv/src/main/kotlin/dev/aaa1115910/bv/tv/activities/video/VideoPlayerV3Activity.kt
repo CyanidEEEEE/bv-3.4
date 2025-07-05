@@ -18,6 +18,7 @@ import dev.aaa1115910.bv.util.Prefs
 import dev.aaa1115910.bv.util.fInfo
 import dev.aaa1115910.bv.viewmodel.VideoPlayerV3ViewModel
 import io.github.oshai.kotlinlogging.KotlinLogging
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class VideoPlayerV3Activity : ComponentActivity() {
