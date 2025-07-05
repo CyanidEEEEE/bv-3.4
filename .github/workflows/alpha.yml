@@ -16,28 +16,23 @@ jobs:
         with:
           ref: develop
           fetch-depth: 0
-          submodules: 'recursive' # 确保初始检出是递归的
+          # recursive 仍然是最佳实践，确保初始检出结构
+          submodules: 'recursive'
 
-      # 增加调试步骤 1: 查看初始子模块状态
-      - name: Debug Submodule Status (Before Update)
+      # 关键修复：同步并强制更新子模块到父项目指定的 commit
+      - name: Sync and Force Update Submodules
         run: |
-          echo "--- Initial Submodule Status ---"
+          echo "--- Syncing submodule URLs and force updating to specified commits ---"
+          # 同步 URL，以防上游有变动
+          git submodule sync --recursive
+          # 强制更新到父项目记录的 commit，--force 会覆盖任何本地更改，对 CI 环境很安全
+          git submodule update --init --recursive --force
+
+      # 增加调试步骤，确认每个子模块最终检出的 commit
+      - name: Debug Final Submodule Status
+        run: |
+          echo "--- Final Submodule Status (shows checked-out commits) ---"
           git submodule status --recursive
-
-      # 关键修复步骤：遍历所有子模块，切换到 develop 分支并拉取最新代码
-      - name: Force Update Submodules to Develop Branch
-        run: |
-          echo "--- Updating all submodules to 'develop' branch ---"
-          # 这条命令会进入每个子模块目录，执行 'git checkout develop' 和 'git pull'
-          git submodule foreach 'git checkout develop && git pull'
-
-      # 增加调试步骤 2: 查看更新后的子模块状态和文件
-      - name: Debug Submodule Status (After Update)
-        run: |
-          echo "--- Final Submodule Status ---"
-          git submodule status --recursive
-          echo "--- Listing files in app/shared ---"
-          ls -R app/shared | head -n 30 # 列出 app/shared 目录下的部分文件以供检查
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -73,9 +68,10 @@ jobs:
           base64 -Dd -i encoded_key > key.jks
 
       - name: Build apk
-        run: ./gradlew assembleDefaultAlpha assembleDefaultDebug --stacktrace # 增加 --stacktrace 以获取更详细的错误日志
+        # 增加 --stacktrace 以便在再次失败时获得最详细的日志
+        run: ./gradlew assembleDefaultAlpha assembleDefaultDebug --stacktrace
 
-      # ... 后续的打包和发布步骤保持不变 ...
+      # ... 后续打包和发布步骤保持不变 ...
       - name: Read alpha apk output metadata
         id: apk-meta-alpha
         uses: juliangruber/read-file-action@v1
