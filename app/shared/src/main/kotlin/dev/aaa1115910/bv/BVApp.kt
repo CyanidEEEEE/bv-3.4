@@ -1,9 +1,12 @@
 package dev.aaa1115910.bv
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.Application
 import android.content.Context
+import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
@@ -58,6 +61,24 @@ class BVApp : Application() {
         context = this.applicationContext
         HandroidLoggerAdapter.DEBUG = BuildConfig.DEBUG
         dataStoreManager = DataStoreManager(applicationContext.dataStore)
+        
+        // 注册Activity生命周期回调，自动设置窗口大小
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+                // 检查是否为TV应用
+                if (activity.packageName.contains("tv")) {
+                    setActivityWindowSize(activity)
+                }
+            }
+            
+            override fun onActivityStarted(activity: Activity) {}
+            override fun onActivityResumed(activity: Activity) {}
+            override fun onActivityPaused(activity: Activity) {}
+            override fun onActivityStopped(activity: Activity) {}
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+            override fun onActivityDestroyed(activity: Activity) {}
+        })
+        
         if (Prefs.blacklistUser) {
             R.string.blacklist_user_toast.toast(context)
             return
@@ -75,6 +96,34 @@ class BVApp : Application() {
         updateMigration()
         HttpServer.startServer()
         updateBlacklist()
+    }
+
+    /**
+     * 设置Activity窗口大小为右侧3/4区域
+     */
+    private fun setActivityWindowSize(activity: Activity) {
+        try {
+            val window = activity.window
+            val params = window.attributes
+            
+            // 获取屏幕尺寸
+            val displayMetrics = resources.displayMetrics
+            val screenWidth = displayMetrics.widthPixels
+            val screenHeight = displayMetrics.heightPixels
+            
+            // 设置窗口宽度为屏幕的3/4，高度为全屏
+            params.width = (screenWidth * 0.75).toInt()
+            params.height = screenHeight
+            
+            // 设置窗口位置为右侧
+            params.gravity = Gravity.END or Gravity.TOP
+            
+            window.attributes = params
+            
+            Log.d("BVApp", "设置Activity窗口大小: ${activity.javaClass.simpleName}, 宽度: ${params.width}, 高度: ${params.height}")
+        } catch (e: Exception) {
+            Log.e("BVApp", "设置Activity窗口大小失败: ${e.message}")
+        }
     }
 
     fun initRepository() {
