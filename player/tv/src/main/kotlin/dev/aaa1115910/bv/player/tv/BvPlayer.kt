@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.tv.material3.Text
@@ -611,11 +613,14 @@ fun BvPlayer(
                 videoPlayer.setOptions()
             }
 
+            val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+
             BvVideoPlayer(
                 modifier = Modifier
                     .fillMaxHeight()
                     .aspectRatio(aspectRatio)
-                    .align(Alignment.Center),
+                    .width(screenWidth * 0.75f)
+                    .align(Alignment.CenterEnd),
                 videoPlayer = videoPlayer,
                 playerListener = videoPlayerListener,
             )
