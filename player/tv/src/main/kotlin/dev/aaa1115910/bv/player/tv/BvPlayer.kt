@@ -19,6 +19,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Text
 import com.kuaishou.akdanmaku.DanmakuConfig
 import com.kuaishou.akdanmaku.data.DanmakuItemData
@@ -619,7 +620,7 @@ fun BvPlayer(
                 modifier = Modifier
                     .fillMaxHeight()
                     .aspectRatio(aspectRatio)
-                    .width(screenWidth * 0.75f)
+                    .width(LocalConfiguration.current.screenWidthDp.dp * 0.75f)
                     .align(Alignment.CenterEnd),
                 videoPlayer = videoPlayer,
                 playerListener = videoPlayerListener,
