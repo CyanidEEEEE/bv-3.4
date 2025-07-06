@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dev.aaa1115910.biliapi.entity.ApiType
 import dev.aaa1115910.bv.R
 import dev.aaa1115910.bv.entity.PlayerType
@@ -18,7 +19,6 @@ import dev.aaa1115910.bv.util.Prefs
 import dev.aaa1115910.bv.util.fInfo
 import dev.aaa1115910.bv.viewmodel.VideoPlayerV3ViewModel
 import io.github.oshai.kotlinlogging.KotlinLogging
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class VideoPlayerV3Activity : ComponentActivity() {
@@ -66,17 +66,6 @@ class VideoPlayerV3Activity : ComponentActivity() {
     private val playerViewModel: VideoPlayerV3ViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // 新增：设置窗口宽度为屏幕的3/4，并靠右显示
-        val window = window
-        val params = window.attributes
-        val displayMetrics = resources.displayMetrics
-        val screenWidth = displayMetrics.widthPixels
-        val screenHeight = displayMetrics.heightPixels
-        params.width = (screenWidth * 0.75).toInt()
-        params.height = screenHeight
-        params.gravity = android.view.Gravity.END or android.view.Gravity.TOP
-        window.attributes = params
-
         var keepSplashScreen = true
         installSplashScreen().apply {
             setKeepOnScreenCondition { keepSplashScreen }
