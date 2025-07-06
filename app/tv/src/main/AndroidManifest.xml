@@ -11,6 +11,7 @@
 
     <application 
         android:name="dev.aaa1115910.bv.BVApp"
+        android:theme="@style/Theme.BV.TV.Dialog"
         tools:targetApi="tiramisu">
         <activity
             android:name=".activities.user.UserLockSettingsActivity"
