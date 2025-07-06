@@ -20,6 +20,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun VideoPlayerV3Screen(
@@ -32,11 +33,10 @@ fun VideoPlayerV3Screen(
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 
     Box(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // 右侧3/4显示完整视频
         Box(
             modifier = Modifier
                 .fillMaxHeight()
