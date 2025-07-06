@@ -5,7 +5,6 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.Gravity
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -65,7 +64,6 @@ class BVApp : Application() {
         // 注册Activity生命周期回调，自动设置窗口大小
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-                Log.d("BVApp", "Activity创建: ${activity.javaClass.simpleName}")
                 // 为所有Activity设置窗口大小为右侧3/4
                 setActivityWindowSize(activity)
             }
@@ -110,8 +108,6 @@ class BVApp : Application() {
             val screenWidth = displayMetrics.widthPixels
             val screenHeight = displayMetrics.heightPixels
             
-            Log.d("BVApp", "屏幕尺寸: ${screenWidth}x${screenHeight}")
-            
             // 设置窗口宽度为屏幕的3/4，高度为全屏
             params.width = (screenWidth * 0.75).toInt()
             params.height = screenHeight
@@ -121,25 +117,8 @@ class BVApp : Application() {
             
             // 应用设置
             window.attributes = params
-            
-            // 延迟再次设置，确保生效
-            activity.window.decorView.post {
-                try {
-                    val newParams = activity.window.attributes
-                    newParams.width = (screenWidth * 0.75).toInt()
-                    newParams.height = screenHeight
-                    newParams.gravity = Gravity.END or Gravity.TOP
-                    activity.window.attributes = newParams
-                    Log.d("BVApp", "延迟设置完成: ${activity.javaClass.simpleName}")
-                } catch (e: Exception) {
-                    Log.e("BVApp", "延迟设置失败: ${e.message}")
-                }
-            }
-            
-            Log.d("BVApp", "设置Activity窗口大小: ${activity.javaClass.simpleName}, 宽度: ${params.width}, 高度: ${params.height}")
         } catch (e: Exception) {
-            Log.e("BVApp", "设置Activity窗口大小失败: ${e.message}")
-            e.printStackTrace()
+            // 静默处理异常，避免影响应用运行
         }
     }
 
@@ -174,7 +153,6 @@ class BVApp : Application() {
     private fun updateMigration() {
         val lastVersionCode = Prefs.lastVersionCode
         if (lastVersionCode >= BuildConfig.VERSION_CODE) return
-        Log.i("BVApp", "updateMigration from $lastVersionCode")
         if (lastVersionCode < 576) {
             // 从 Prefs 中读取登录数据写入 UserDB
             if (Prefs.isLogin) {
@@ -211,6 +189,7 @@ val appModule = module {
     single { ChannelRepository() }
     single { FavoriteRepository(get()) }
     single { LikeRepository(get()) }
+    single { CoinRepository(get())}
     single { OneClickTripleActionRepository(get()) }
     single { HistoryRepository(get(), get()) }
     single { ToViewRepository(get(), get()) }
