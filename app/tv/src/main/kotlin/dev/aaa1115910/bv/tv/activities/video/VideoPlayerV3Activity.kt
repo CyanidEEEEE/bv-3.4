@@ -66,23 +66,13 @@ class VideoPlayerV3Activity : ComponentActivity() {
     private val playerViewModel: VideoPlayerV3ViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        // 设置窗口为右侧3/4
-        val window = window
-        val params = window.attributes
-        val displayMetrics = resources.displayMetrics
-        val screenWidth = displayMetrics.widthPixels
-        val screenHeight = displayMetrics.heightPixels
-        params.width = (screenWidth * 0.75).toInt()
-        params.height = screenHeight
-        params.gravity = android.view.Gravity.END or android.view.Gravity.TOP
-        window.attributes = params
-
         var keepSplashScreen = true
         installSplashScreen().apply {
             setKeepOnScreenCondition { keepSplashScreen }
         }
+        super.onCreate(savedInstanceState)
         initVideoPlayer()
+        //initDanmakuPlayer()
         getParamsFromIntent()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContent {

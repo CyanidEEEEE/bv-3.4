@@ -7,11 +7,4 @@
     </style>
 
     <style name="Theme.BV.TV" parent="Theme.Material3.DayNight.NoActionBar" />
-
-    <style name="Theme.BV.TV.Dialog" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="android:windowIsTranslucent">true</item>
-        <item name="android:windowBackground">@android:color/black</item>
-        <item name="android:windowIsFloating">true</item>
-        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
-    </style>
 </resources>
