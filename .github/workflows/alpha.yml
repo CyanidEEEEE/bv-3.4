@@ -14,6 +14,7 @@ jobs:
       contents: write
 
     steps:
+      # ... (前面从 Checkout 到 Build apk 的步骤都保持不变) ...
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -62,20 +63,30 @@ jobs:
       - name: Build apk
         run: ./gradlew assembleDefaultAlpha assembleDefaultDebug --stacktrace
 
-      # ================= 最终修正 START =================
+      # ================= 终极修正 START =================
       
-      - name: Parse apk infos
+      - name: Parse infos and find artifact paths
         id: apk-infos
         run: |
-          # 根据日志确认的真实路径来解析元数据
+          # 1. 解析版本信息 (和以前一样)
           alpha_meta_path="app/build/outputs/apk/default/alpha/output-metadata.json"
           debug_meta_path="app/build/outputs/apk/default/debug/output-metadata.json"
           
-          # 从元数据文件中提取 versionCode 和 versionName，并设置为环境变量
           echo "alpha_info_version_code=$(jq -r '.elements[0].versionCode' $alpha_meta_path)" >> $GITHUB_ENV
           echo "alpha_info_version_name=$(jq -r '.elements[0].versionName' $alpha_meta_path)" >> $GITHUB_ENV
-          echo "alpha_debug_info_version_code=$(jq -r '.elements[0].versionCode' $debug_meta_path)" >> $GITHUB_ENV
-          echo "alpha_debug_info_version_name=$(jq -r '.elements[0].versionName' $debug_meta_path)" >> $GITHUB_ENV
+          
+          # 2. 【关键】直接搜索APK文件的完整路径，不再猜测文件名！
+          #    -name '*.apk' 查找所有以.apk结尾的文件
+          #    -type f 确保是文件而不是目录
+          alpha_apk_path=$(find app/build/outputs/apk/default/alpha -type f -name "*.apk")
+          debug_apk_path=$(find app/build/outputs/apk/default/debug -type f -name "*.apk")
+          
+          # 3. 将找到的完整路径存入环境变量
+          echo "alpha_apk_path=$alpha_apk_path" >> $GITHUB_ENV
+          echo "debug_apk_path=$debug_apk_path" >> $GITHUB_ENV
+          
+          echo "Found Alpha APK at: $alpha_apk_path"
+          echo "Found Debug APK at: $debug_apk_path"
 
       - name: Determine tag name
         id: tag_name
@@ -90,12 +101,12 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_ENV"
       
-      # 使用动态构建的、与实际产物完全一致的文件名和路径
+      # 直接使用我们找到的完整路径变量
       - name: Archive alpha debug build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Alpha debug build artifact
-          path: app/build/outputs/apk/default/debug/BV_${{ env.alpha_debug_info_version_code }}_${{ env.alpha_debug_info_version_name }}_custom.debug_default_universal.apk
+          path: ${{ env.debug_apk_path }}
 
       - name: Archive default alpha build mappings
         uses: actions/upload-artifact@v4
@@ -107,23 +118,22 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Alpha build artifact
-          path: app/build/outputs/apk/default/alpha/BV_${{ env.alpha_info_version_code }}_${{ env.alpha_info_version_name }}_custom.alpha_default_universal.apk
+          path: ${{ env.alpha_apk_path }}
 
       - name: Zip mapping
-        # 确保从正确的目录打包 mapping 文件
         run: zip -rj mapping.zip app/build/outputs/mapping/defaultAlpha
 
       - name: Publish Pre-Release
         uses: softprops/action-gh-release@v2
         with:
-          # 在 files 列表里提供所有正确的、经过验证的路径
+          # 直接使用我们找到的完整路径变量
           files: |
-            app/build/outputs/apk/default/debug/BV_${{ env.alpha_debug_info_version_code }}_${{ env.alpha_debug_info_version_name }}_custom.debug_default_universal.apk
-            app/build/outputs/apk/default/alpha/BV_${{ env.alpha_info_version_code }}_${{ env.alpha_info_version_name }}_custom.alpha_default_universal.apk
+            ${{ env.debug_apk_path }}
+            ${{ env.alpha_apk_path }}
             mapping.zip
           tag_name: ${{ env.tag_name }}
           name: Alpha ${{ env.alpha_info_version_name }}
           prerelease: true
           body: ${{ env.changelog }}
           target_commitish: ${{ github.sha }}
-      # ================= 最终修正 END ===================
+      # ================= 终极修正 END ===================
