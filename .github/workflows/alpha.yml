@@ -62,72 +62,15 @@ jobs:
       - name: Build apk
         run: ./gradlew assembleDefaultAlpha assembleDefaultDebug --stacktrace
 
-      # 移除调试步骤，因为我们现在要直接修复路径
-      # - name: Debug APK Output Path
-
       # ================= 关键修改 START =================
-      # 修正 output-metadata.json 文件的路径
-      - name: Parse apk infos
-        id: apk-infos
+      # 重新引入调试步骤，这次我们将看到真相
+      - name: Find APK and Metadata files
         run: |
-          # 根据 flavor + buildType 的标准命名规则，修正路径
-          alpha_meta_path="app/build/outputs/apk/default/alpha/output-metadata.json"
-          debug_meta_path="app/build/outputs/apk/default/debug/output-metadata.json"
-          
-          echo "alpha_info_version_code=$(jq -r '.elements[0].versionCode' $alpha_meta_path)" >> $GITHUB_ENV
-          echo "alpha_info_version_name=$(jq -r '.elements[0].versionName' $alpha_meta_path)" >> $GITHUB_ENV
-          echo "alpha_debug_info_version_code=$(jq -r '.elements[0].versionCode' $debug_meta_path)" >> $GITHUB_ENV
-          echo "alpha_debug_info_version_name=$(jq -r '.elements[0].versionName' $debug_meta_path)" >> $GITHUB_ENV
-
-      - name: Determine tag name
-        id: tag_name
-        run: echo "tag_name=alpha-r${{ env.alpha_info_version_code }}" >> $GITHUB_ENV
-
-      - name: Get changelog
-        id: changelog
-        run: |
-          {
-            echo "changelog<<EOF"
-            echo "$(git log --pretty=format:"- %s (%h)" ${{ github.event.before }}..${{ github.sha }})"
-            echo "EOF"
-          } >> "$GITHUB_ENV"
-      
-      # 修正所有 APK 和 mapping 文件的路径
-      - name: Archive alpha debug build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Alpha debug build artifact
-          # 修正路径
-          path: app/build/outputs/apk/default/debug/BV_${{ env.alpha_debug_info_version_code }}_${{ env.alpha_debug_info_version_name }}.debug_default_universal.apk
-
-      - name: Archive default alpha build mappings
-        uses: actions/upload-artifact@v4
-        with:
-          name: Alpha build mappings
-          # 修正路径
-          path: app/build/outputs/mapping/defaultAlpha/
-
-      - name: Archive alpha build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Alpha build artifact
-          # 修正路径
-          path: app/build/outputs/apk/default/alpha/BV_${{ env.alpha_info_version_code }}_${{ env.alpha_info_version_name }}.alpha_default_universal.apk
-
-      - name: Zip mapping
-        run: zip -rj mapping.zip app/build/outputs/mapping/defaultAlpha
-
-      - name: Publish Pre-Release
-        uses: softprops/action-gh-release@v2
-        with:
-          # 修正路径
-          files: |
-            app/build/outputs/apk/default/debug/BV_${{ env.alpha_debug_info_version_code }}_${{ env.alpha_debug_info_version_name }}.debug_default_universal.apk
-            app/build/outputs/apk/default/alpha/BV_${{ env.alpha_info_version_code }}_${{ env.alpha_info_version_name }}.alpha_default_universal.apk
-            mapping.zip
-          tag_name: ${{ env.tag_name }}
-          name: ${{ env.alpha_info_version_name }}
-          prerelease: true
-          body: ${{ env.changelog }}
-          target_commitish: ${{ github.sha }}
+          echo "--- Listing ALL files in app/build/outputs ---"
+          # 使用 find 命令，它会递归地列出所有文件和它们的完整路径
+          find app/build/outputs -type f
       # ================= 关键修改 END ===================
+
+      # 为了防止因路径错误而干扰我们的调试，暂时注释掉所有后续步骤
+      # - name: Parse apk infos
+      # ... (所有后续步骤都暂时不运行)
