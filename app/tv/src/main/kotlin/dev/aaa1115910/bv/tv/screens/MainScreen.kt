@@ -15,6 +15,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.aaa1115910.bv.R
@@ -42,6 +43,9 @@ fun MainScreen(
     var showUserPanel by remember { mutableStateOf(false) }
     var lastPressBack: Long by remember { mutableLongStateOf(0L) }
     var selectedDrawerItem by remember { mutableStateOf(DrawerItem.Home) }
+    
+    // 获取屏幕宽度
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 
     val mainFocusRequester = remember { FocusRequester() }
     val mainNavFocusRequester = remember { FocusRequester() }
@@ -92,68 +96,83 @@ fun MainScreen(
         handleBack()
     }
 
-    // 使用Row替代NavigationDrawer
-    Row(modifier = modifier) {
-        // 侧边导航栏
+    // 整体容器，黑色背景
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        // 右侧3/4内容区域
         Box(
             modifier = Modifier
                 .fillMaxHeight()
-                .background(Color(0xFF1A1A1A))
-                .padding(start = 8.dp)
+                .width(screenWidth * 0.75f)
+                .align(Alignment.CenterEnd) // 靠右对齐
         ) {
-            // 使用Column加入普通DrawerContent
-            DrawerContent(
-                isLogin = userViewModel.isLogin,
-                avatar = userViewModel.face,
-                onDrawerItemChanged = {
-                    selectedDrawerItem = it
-                },
-                onShowUserPanel = {
-                    showUserPanel = true
-                },
-                onFocusToContent = onFocusToContent,
-                onLogin = {
-                    context.startActivity(Intent(context, LoginActivity::class.java))
+            // 使用Row替代NavigationDrawer
+            Row(modifier = Modifier.fillMaxSize()) {
+                // 侧边导航栏
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .background(Color(0xFF1A1A1A))
+                        .padding(start = 8.dp)
+                ) {
+                    // 使用Column加入普通DrawerContent
+                    DrawerContent(
+                        isLogin = userViewModel.isLogin,
+                        avatar = userViewModel.face,
+                        onDrawerItemChanged = {
+                            selectedDrawerItem = it
+                        },
+                        onShowUserPanel = {
+                            showUserPanel = true
+                        },
+                        onFocusToContent = onFocusToContent,
+                        onLogin = {
+                            context.startActivity(Intent(context, LoginActivity::class.java))
+                        }
+                    )
                 }
-            )
-        }
 
-        // 占位的区域，用来让内容页向左返回时先被这个占位抢占到焦点，然后再分发焦点到对应左侧栏位置
-        LeftPlaceHolder {
-            drawerItemFocusRequesters[selectedDrawerItem]?.requestFocus()
-        }
-
-        // 内容区域
-        Box(modifier = Modifier.weight(1f)) {
-            Column {
                 // 占位的区域，用来让内容页向左返回时先被这个占位抢占到焦点，然后再分发焦点到对应左侧栏位置
-                TopPlaceHolder{
+                LeftPlaceHolder {
                     drawerItemFocusRequesters[selectedDrawerItem]?.requestFocus()
                 }
-                AnimatedContent(
-                    targetState = selectedDrawerItem,
-                    label = "main animated content",
-                    transitionSpec = {
-                        val coefficient = 20
-                        if (targetState.ordinal < initialState.ordinal) {
-                            fadeIn() + slideInVertically { -it / coefficient } togetherWith
-                                fadeOut() + slideOutVertically { it / coefficient }
-                        } else {
-                            fadeIn() + slideInVertically { it / coefficient } togetherWith
-                                fadeOut() + slideOutVertically { -it / coefficient }
+
+                // 内容区域
+                Box(modifier = Modifier.weight(1f)) {
+                    Column {
+                        // 占位的区域，用来让内容页向左返回时先被这个占位抢占到焦点，然后再分发焦点到对应左侧栏位置
+                        TopPlaceHolder{
+                            drawerItemFocusRequesters[selectedDrawerItem]?.requestFocus()
                         }
-                    }
-                ) { screen ->
-                    when (screen) {
-                        DrawerItem.Home -> HomeContent(
-                            contentFocusRequester = mainFocusRequester,
-                            navFocusRequester = mainNavFocusRequester
-                        )
-                        DrawerItem.UGC -> UgcContent(contentFocusRequester = ugcFocusRequester)
-                        DrawerItem.PGC -> PgcContent(contentFocusRequester = pgcFocusRequester)
-                        DrawerItem.Search -> SearchInputScreen(defaultFocusRequester = searchFocusRequester)
-                        DrawerItem.Settings -> SettingsScreen(defaultFocusRequester = settingFocusRequester)
-                        else -> {}
+                        AnimatedContent(
+                            targetState = selectedDrawerItem,
+                            label = "main animated content",
+                            transitionSpec = {
+                                val coefficient = 20
+                                if (targetState.ordinal < initialState.ordinal) {
+                                    fadeIn() + slideInVertically { -it / coefficient } togetherWith
+                                        fadeOut() + slideOutVertically { it / coefficient }
+                                } else {
+                                    fadeIn() + slideInVertically { it / coefficient } togetherWith
+                                        fadeOut() + slideOutVertically { -it / coefficient }
+                                }
+                            }
+                        ) { screen ->
+                            when (screen) {
+                                DrawerItem.Home -> HomeContent(
+                                    contentFocusRequester = mainFocusRequester,
+                                    navFocusRequester = mainNavFocusRequester
+                                )
+                                DrawerItem.UGC -> UgcContent(contentFocusRequester = ugcFocusRequester)
+                                DrawerItem.PGC -> PgcContent(contentFocusRequester = pgcFocusRequester)
+                                DrawerItem.Search -> SearchInputScreen(defaultFocusRequester = searchFocusRequester)
+                                DrawerItem.Settings -> SettingsScreen(defaultFocusRequester = settingFocusRequester)
+                                else -> {}
+                            }
+                        }
                     }
                 }
             }
